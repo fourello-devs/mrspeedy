@@ -30,9 +30,6 @@ class MrSpeedyServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->bootForConsole();
         }
-
-        // Register Helpers
-        $this->registerHelpers();
     }
 
     /**
@@ -89,16 +86,5 @@ class MrSpeedyServiceProvider extends ServiceProvider
 
         // Registering package commands.
         // $this->commands([]);
-    }
-
-    /**
-     * Register helpers file
-     */
-    public function registerHelpers(): void
-    {
-        $path = __DIR__ . '/../helpers/CustomHelpers.php';
-        if (! function_exists('mrspeedy') && File::exists($path)) {
-            require_once __DIR__ . '/../helpers/CustomHelpers.php';
-        }
     }
 }
