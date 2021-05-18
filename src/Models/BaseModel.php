@@ -42,7 +42,7 @@ abstract class BaseModel implements \JsonSerializable
     {
         if($response->ok()) {
             $array = $response->json($key);
-            $this->setFields($array);
+            $array && $this->setFields($array);
         }
         return $this;
     }
@@ -74,7 +74,7 @@ abstract class BaseModel implements \JsonSerializable
     public function jsonSerialize(): BaseModel
     {
         foreach (get_object_vars($this) as $key=>$value) {
-            if (empty($value)){
+            if (empty($value)) {
                 unset($this->$key);
             }
         }

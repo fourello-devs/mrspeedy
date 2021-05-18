@@ -3,7 +3,9 @@
 namespace FourelloDevs\MrSpeedy;
 
 use FourelloDevs\MrSpeedy\Models\BankCard;
+use FourelloDevs\MrSpeedy\Models\BaseModel;
 use FourelloDevs\MrSpeedy\Models\Client;
+use FourelloDevs\MrSpeedy\Models\Courier;
 use FourelloDevs\MrSpeedy\Models\Order;
 use GuzzleHttp\Promise\PromiseInterface;
 use Illuminate\Http\Client\Response;
@@ -152,7 +154,7 @@ class MrSpeedy
         $this->environment = $environment;
     }
 
-    // API METHODS
+    /***** API METHODS *****/
 
     /**
      * @param Order $order
@@ -181,9 +183,19 @@ class MrSpeedy
      * @throws \JsonException
      */
 
-    public function placeOrder(Order $order): void
+    public function placeOrder(Order $order): ?Order
     {
+        $result = null;
 
+        $data = json_decode(json_encode($order, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
+
+        $res = $this->makeRequest(TRUE, 'create-order', $data);
+
+        if ($res->ok()) {
+            $result = new Order($res, 'order');
+        }
+
+        return $result;
     }
 
     /**
@@ -192,20 +204,48 @@ class MrSpeedy
      * @throws \JsonException
      */
 
-    public function editOrder()
+    public function editOrder(Order $order): ?Order
     {
+        $result = null;
 
+        $data = json_decode(json_encode($order, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
+
+        $res = $this->makeRequest(TRUE, 'edit-order', $data);
+
+        if ($res->ok()) {
+            $result = new Order($res, 'order');
+        }
+
+        return $result;
     }
 
     /**
      * Canceling an order
      *
+     * @param Order|int $order
+     * @return Order|int $order
      * @throws \JsonException
      */
 
-    public function cancelOrder()
+    public function cancelOrder($order): ?Order
     {
+        $result = null;
 
+        if (is_int($order)) {
+            $id = $order;
+            $order = new Order;
+            $order->order_id = $id;
+        }
+
+        $data = json_decode(json_encode($order, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
+
+        $res = $this->makeRequest(TRUE, 'cancel-order', $data);
+
+        if ($res->ok()) {
+            $result = new Order($res, 'order');
+        }
+
+        return $result;
     }
 
 
@@ -228,7 +268,7 @@ class MrSpeedy
         $res = $this->makeRequest(FALSE, 'orders', $data);
 
         if ($res->ok()) {
-            $orders = $res->json('bank_cards');
+            $orders = $res->json('orders');
             if (empty($orders) === FALSE) {
                 foreach ($orders as $order){
                     $result[] = new Order($order);
@@ -242,11 +282,30 @@ class MrSpeedy
     /**
      * Courier info and courier location
      *
+     * @param Order|int $order
+     * @return Courier|null
+     * @throws \JsonException
      */
 
-    public function getCourier()
+    public function getCourier($order): ?Courier
     {
+        $result = null;
 
+        if (is_int($order)) {
+            $id = $order;
+            $order = new Order;
+            $order->order_id = $id;
+        }
+
+        $data = json_decode(json_encode($order, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
+
+        $res = $this->makeRequest(FALSE, 'courier', $data);
+
+        if ($res->ok()) {
+            $result = new Courier($res, 'courier');
+        }
+
+        return $result;
     }
 
     /**
@@ -283,7 +342,7 @@ class MrSpeedy
         if ($res->ok()) {
             $cards = $res->json('bank_cards');
             if (empty($cards) === FALSE) {
-                foreach ($cards as $card){
+                foreach ($cards as $card) {
                     $result[] = new BankCard($card);
                 }
             }
