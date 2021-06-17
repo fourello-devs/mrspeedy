@@ -41,4 +41,20 @@ class Client extends BaseModel
      * @var array|null
      */
     public $allowed_payment_methods;
+
+    /**
+     * Get Client
+     *
+     * @return array|mixed|static
+     */
+    public static function get()
+    {
+        $res = mrspeedy()->makeRequest(FALSE, 'client', []);
+
+        if ($res->ok()) {
+            return new static($res, 'client');
+        }
+
+        return $res->json();
+    }
 }

@@ -2,12 +2,15 @@
 
 namespace FourelloDevs\MrSpeedy\Examples;
 
+use FourelloDevs\MrSpeedy\Models\BankCard;
 use FourelloDevs\MrSpeedy\Models\BaseModel;
 use FourelloDevs\MrSpeedy\Models\Client;
 use FourelloDevs\MrSpeedy\Models\Courier;
 use FourelloDevs\MrSpeedy\Models\Order;
+use FourelloDevs\MrSpeedy\Models\OrderStatus;
 use FourelloDevs\MrSpeedy\Models\Point;
 use FourelloDevs\MrSpeedy\Models\ContactPerson;
+use Illuminate\Support\Collection;
 
 
 /**
@@ -21,13 +24,15 @@ class APIExamples
      * @throws \JsonException
      */
 
-    public function calculateOrderPriceTest(): ?Order
+    public function calculateOrderPriceTest()
     {
         $order = new Order;
         $order->matter = "Documents";
 
         $point1 = new Point;
         $point1->address = "Ultramega, General T. De Leon, Demitillo, 2nd District, Valenzuela, Third District, Metro Manila, 1442, Philippines";
+        $point1->latitude = '14.6880119';
+        $point1->longitude = '121.0004288';
 
         $contact1 = new ContactPerson;
         $contact1->name = 'James Carlo Luchavez';
@@ -37,6 +42,8 @@ class APIExamples
 
         $point2 = new Point;
         $point2->address = "Demitillo, 2nd District, Valenzuela, Third District, Metro Manila, 1442, Philippines";
+        $point2->latitude = '14.6894522';
+        $point2->longitude = '120.9973454';
 
         $contact2 = new ContactPerson;
         $contact2->name = 'Denys Don';
@@ -46,7 +53,7 @@ class APIExamples
 
         $order->points = [$point1, $point2];
 
-        return mrspeedy()->calculateOrderPrice($order);
+        return $order->calculate();
     }
 
     /**
@@ -78,39 +85,24 @@ class APIExamples
 
         $order->points = [$point1, $point2];
 
-        return mrspeedy()->placeOrder($order);
+        return $order->execute();
     }
 
     /**
      * Order editing
      **/
 
-    public function editOrderTest()
+    public function editOrderTest(string $id)
     {
-        $order = new Order;
-        $order->order_id = 97361;
+        $order = Order::find($id);
 
-        $point1 = new Point;
-        $point1->address = "Ultramega, General T. De Leon, Demitillo, 2nd District, Valenzuela, Third District, Metro Manila, 1442, Philippines";
+        if ($order instanceof Order === FALSE) {
+            return $order;
+        }
 
-        $contact1 = new ContactPerson;
-        $contact1->name = 'James Luchavez';
-        $contact1->phone = '09061886959';
+        $order->matter = 'Flowers';
 
-        $point1->contact_person = $contact1;
-
-        $point2 = new Point;
-        $point2->address = "Demitillo, 2nd District, Valenzuela, Third District, Metro Manila, 1442, Philippines";
-
-        $contact2 = new ContactPerson;
-        $contact2->name = 'Denys Dela Cruz';
-        $contact2->phone = '09061886959';
-
-        $point2->contact_person = $contact2;
-
-        $order->points = [$point1, $point2];
-
-        return mrspeedy()->editOrder($order);
+        return $order->update();
     }
 
     /**
@@ -119,36 +111,38 @@ class APIExamples
 
     public function cancelOrderTest()
     {
-//        return mrspeedy()->cancelOrder(97361);
-        return mrspeedy()->cancelOrder(97360);
+        $orders = Order::all(OrderStatus::AVAILABLE);
+        if ($orders instanceof Collection) {
+            return $orders->first()->cancel();
+        }
     }
 
     /**
      * List of orders
      **/
 
-    public function getOrdersTest(): array
+    public function getOrdersTest()
     {
-//        return mrspeedy()->getOrders([97360]);
-        return mrspeedy()->getOrders();
+//        return Order::find(103129);
+        return Order::all();
     }
 
     /**
      * Courier info and courier location
      **/
 
-    public function getCourierTest(): ?Courier
+    public function getCourierTest()
     {
-        return mrspeedy()->getCourier(97362);
+        return Order::find(97387)->getCourier();
     }
 
     /**
      * Client profile info
      **/
 
-    public function getClientTest(): ?Client
+    public function getClientTest()
     {
-        return mrspeedy()->getClient();
+        return Client::get();
     }
 
     /**
@@ -157,51 +151,6 @@ class APIExamples
 
     public function getBankCardsTest(): array
     {
-        return mrspeedy()->getBankCards();
-    }
-
-    /**
-     * Create draft deliveries
-     **/
-
-    public function createDraftDeliveryTest()
-    {
-
-    }
-
-    /**
-     * Edit draft deliveries
-     **/
-
-    public function editDraftDeliveryTest()
-    {
-
-    }
-
-    /**
-     * Delete draft deliveries
-     **/
-
-    public function deleteDraftDeliveriesTest()
-    {
-
-    }
-
-    /**
-     * List of deliveries
-     **/
-
-    public function getDeliveriesTest()
-    {
-
-    }
-
-    /**
-     * Make routes from deliveries
-     **/
-
-    public function makeRoutesFromDeliveriesTest()
-    {
-
+        return BankCard::get();
     }
 }

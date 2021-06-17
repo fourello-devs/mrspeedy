@@ -3,6 +3,9 @@
 
 namespace FourelloDevs\MrSpeedy\Models;
 
+use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
+
 /**
  * Class Order
  * @package FourelloDevs\MrSpeedy\Models
@@ -12,6 +15,13 @@ namespace FourelloDevs\MrSpeedy\Models;
  */
 class Order extends BaseModel
 {
+    /**
+     * Type of Order
+     *
+     * @var string
+     */
+    public $type;
+
     /**
      * Full order ID.
      * @var int
@@ -158,6 +168,14 @@ class Order extends BaseModel
     public $delivery_fee_amount;
 
     /**
+     * Intercity Delivery fee.
+     * @example "0.00"
+     *
+     * @var string
+     */
+    public $intercity_delivery_fee_amount;
+
+    /**
      * Large weight fee.
      * Part of order price (payment_amount).
      * @var string
@@ -263,5 +281,198 @@ class Order extends BaseModel
     public function setCourier($courier): void
     {
         $this->courier = is_array($courier) ? new Courier($courier) : $courier;
+    }
+
+    /**
+     * @return array|Courier|mixed
+     */
+    public function getCourier()
+    {
+        $data['order_id'] = $this->order_id;
+
+        $res = mrspeedy()->makeRequest(FALSE, 'courier', $data);
+
+        if ($res->ok() && is_request_or_array_filled($res->json(), 'courier')) {
+            $this->courier = $this->courier ? $this->courier->parse($res, 'courier') : new Courier($res, 'courier');
+            return $this->courier;
+        }
+
+        return $res->json();
+
+    }
+
+    /***** METHODS *****/
+
+    /**
+     * Find Order
+     *
+     * @param string $order_id
+     * @return array|Order|mixed
+     */
+    public static function find(string $order_id)
+    {
+        $result = static::get(Arr::wrap($order_id));
+        return $result instanceof Collection ? $result->first() : $result;
+    }
+
+    /**
+     * Get Orders
+     *
+     * @param array $order_id
+     * @param string|null $status
+     * @param int $offset
+     * @param int $count
+     * @return array|Collection|mixed
+     */
+    public static function get(array $order_id, string $status = null, int $offset = 0, int $count = 10)
+    {
+        $data = array_filter_recursive(get_defined_vars());
+
+        $res = mrspeedy()->makeRequest(FALSE, 'orders', $data);
+
+        if ($res->ok()) {
+            $orders = $res->json('orders');
+            if (empty($orders) === FALSE) {
+                $result = collect();
+                foreach ($orders as $order){
+                    $result->add(new Order($order));
+                }
+                return $result;
+            }
+        }
+
+        return $res->json();
+    }
+
+    /**
+     * Get All Orders
+     *
+     * @return array|Collection|mixed
+     */
+    public static function all(string $status = null)
+    {
+        return static::get([], $status);
+    }
+
+    /**
+     * Order Price Calculation
+     *
+     * @return $this|array|mixed
+     */
+    public function calculate()
+    {
+        try {
+            $data = json_decode(json_encode($this, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
+        }
+        catch (\JsonException $exception) {
+            return $exception->getMessage();
+        }
+
+        $res = mrspeedy()->makeRequest(TRUE, 'calculate-order', $data);
+
+        if ($res->ok() && is_request_or_array_filled($res->json(), 'warnings') === FALSE) {
+            $this->parse($res, 'order');
+            return $this;
+        }
+
+        return $res->json();
+    }
+
+    /**
+     * Place Order
+     *
+     * @return $this|array|mixed
+     */
+    public function execute()
+    {
+        try {
+            $data = json_decode(json_encode($this, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
+        }
+        catch (\JsonException $exception) {
+            return $exception->getMessage();
+        }
+
+        $res = mrspeedy()->makeRequest(TRUE, 'create-order', $data);
+
+        if ($res->ok()) {
+            $this->parse($res, 'order');
+            return $this;
+        }
+
+        return $res->json();
+    }
+
+    /**
+     * Update Order
+     *
+     * @return $this|array|mixed
+     */
+    public function update()
+    {
+        try {
+            $data = json_decode(json_encode($this, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
+        }
+        catch (\JsonException $exception) {
+            return $exception->getMessage();
+        }
+
+        // Remove unrelated to Order creation
+
+        $forget_list = [
+            'order_name',
+            'created_datetime',
+            'status',
+            'status_description',
+            'insurance_fee_amount',
+            'backpayment_amount',
+            'payment_amount',
+            'delivery_fee_amount',
+            'intercity_delivery_fee_amount',
+            'weight_fee_amount',
+            'loading_fee_amount',
+            'money_transfer_fee_amount',
+            'suburban_delivery_fee_amount',
+            'overnight_fee_amount',
+            'discount_amount',
+            'cod_fee_amount',
+        ];
+
+        $num_points = count(Arr::get($data, 'points', []));
+
+        for ($i = 0; $i < $num_points; $i++){
+            $forget_list[] = 'points.' . $i . '.tracking_url';
+        }
+
+        Arr::forget($data, $forget_list);
+
+        // Proceed to Update
+
+        $res = mrspeedy()->makeRequest(TRUE, 'edit-order', $data);
+
+        if ($res->ok()) {
+            $this->parse($res, 'order');
+            return $this;
+        }
+
+        return $res->json();
+    }
+
+    /**
+     * Cancel Order
+     *
+     * @return $this|array|mixed
+     */
+    public function cancel()
+    {
+        $data['order_id'] = $this->order_id;
+
+        $res = mrspeedy()->makeRequest(TRUE, 'cancel-order', $data);
+
+        if ($res->ok()) {
+            $this->parse($res, 'order');
+            return $this;
+        }
+
+        return $res->json();
     }
 }

@@ -67,7 +67,7 @@ public function calculateOrderPriceTest(): ?Order
 
     $order->points = [$point1, $point2];
 
-    return mrspeedy()->calculateOrderPrice($order);
+    return $order->calculate();
 }
 
 ```
@@ -75,27 +75,34 @@ public function calculateOrderPriceTest(): ?Order
 - #### List of orders
 
 ```php
-public function getOrdersTest(): array
+use FourelloDevs\MrSpeedy\Models\Order;
+
+public function getOrdersTest()
 {
-    return mrspeedy()->getOrders();
+    return Order::all();
 }
 ```
 
 - #### Client profile info
 
 ```php
-public function getClientTest(): ?Client
+
+use FourelloDevs\MrSpeedy\Models\Client;
+
+public function getClientTest()
 {
-    return mrspeedy()->getClient();
+    return Client::get();
 }
 ```
 
 - #### Available bank cards
 
 ```php
+use FourelloDevs\MrSpeedy\Models\BankCard;
+
 public function getBankCardsTest(): array
 {
-    return mrspeedy()->getBankCards();
+    return BankCard::get();
 }
 ```
 

@@ -5,6 +5,7 @@ namespace FourelloDevs\MrSpeedy\Models;
 
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
@@ -24,10 +25,10 @@ abstract class BaseModel implements \JsonSerializable
     public function __construct($array = NULL, ?string $key = NULL)
     {
         if(empty($array) === FALSE) {
-            if($array instanceof Response){
+            if($array instanceof Response) {
                 $this->parse($array, $key);
             }
-            elseif (is_array($array)){
+            elseif (is_array($array)) {
                 $this->setFields($array);
             }
         }
@@ -50,10 +51,10 @@ abstract class BaseModel implements \JsonSerializable
     /**
      * @param array $array
      */
-    private function setFields(array $array): void
+    protected function setFields(array $array): void
     {
         foreach (get_object_vars($this) as $key=>$value){
-            if(Arr::has($array, $key)){
+            if(Arr::has($array, $key)) {
                 if(method_exists($this, $method = Str::camel('set' . $key))) {
                     $this->$method($array[$key]);
                 }
@@ -67,17 +68,12 @@ abstract class BaseModel implements \JsonSerializable
     /**
      * Specify data which should be serialized to JSON
      * @link https://php.net/manual/en/jsonserializable.jsonserialize.php
-     * @return BaseModel data which can be serialized by <b>json_encode</b>,
+     * @return array data which can be serialized by <b>json_encode</b>,
      * which is a value of any type other than a resource.
      * @since 5.4
      */
-    public function jsonSerialize(): BaseModel
+    public function jsonSerialize(): array
     {
-        foreach (get_object_vars($this) as $key=>$value) {
-            if (empty($value)) {
-                unset($this->$key);
-            }
-        }
-        return $this;
+        return array_filter_recursive(get_object_vars($this));
     }
 }
