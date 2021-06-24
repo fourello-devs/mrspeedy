@@ -370,7 +370,7 @@ class Order extends BaseModel
 
         $res = mrspeedy()->makeRequest(TRUE, 'calculate-order', $data);
 
-        if ($res->ok() && is_request_or_array_filled($res->json(), 'warnings') === FALSE) {
+        if ($res->ok() && is_request_or_array_filled($res->json(), 'warnings') === FALSE && is_request_or_array_filled($res->json(), 'errors') === FALSE) {
             $this->parse($res, 'order');
             return $this;
         }
@@ -394,7 +394,7 @@ class Order extends BaseModel
 
         $res = mrspeedy()->makeRequest(TRUE, 'create-order', $data);
 
-        if ($res->ok()) {
+        if ($res->ok() && is_request_or_array_filled($res->json(), 'warnings') === FALSE && is_request_or_array_filled($res->json(), 'errors') === FALSE) {
             $this->parse($res, 'order');
             return $this;
         }

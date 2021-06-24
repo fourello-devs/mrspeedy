@@ -3,9 +3,7 @@
 namespace FourelloDevs\MrSpeedy\Examples;
 
 use FourelloDevs\MrSpeedy\Models\BankCard;
-use FourelloDevs\MrSpeedy\Models\BaseModel;
 use FourelloDevs\MrSpeedy\Models\Client;
-use FourelloDevs\MrSpeedy\Models\Courier;
 use FourelloDevs\MrSpeedy\Models\Order;
 use FourelloDevs\MrSpeedy\Models\OrderStatus;
 use FourelloDevs\MrSpeedy\Models\Point;
